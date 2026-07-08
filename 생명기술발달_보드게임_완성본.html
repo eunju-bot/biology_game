@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧬 생명기술 발달 보드게임 - Q-BOARD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-gradient:linear-gradient(135deg,#0f3d2e 0%,#1a6b4a 60%,#2e9e6e 100%);
+  --center-bg:#fff7ec;
+  --c-scientist:#3b82f6; --c-invention:#ec4899; --c-bonus:#eab308;
+  --c-penalty:#ef4444; --c-challenge:#8b5cf6; --c-mystery:#f97316;
+  --c-island:#06b6d4; --c-rest:#64748b;
+  --font-title:'Do Hyeon',sans-serif;
+  --font-body:'Gowun Dodum',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg-gradient);min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;color:#1e293b;padding:24px;font-family:var(--font-body);}
+header{text-align:center;color:#fff;margin-bottom:22px;text-shadow:0 3px 8px rgba(0,0,0,.4);}
+header h1{font-family:var(--font-title);font-size:3rem;letter-spacing:1px;margin-bottom:8px;}
+header p{font-size:1.25rem;opacity:.95;}
+
+.game-container{display:flex;gap:28px;max-width:1500px;width:100%;justify-content:center;align-items:flex-start;}
+
+.board-container{position:relative;width:1000px;height:680px;background:#1f8a5b;border-radius:26px;
+  padding:18px;box-shadow:0 22px 50px rgba(0,0,0,.45);border:7px solid #0d6b45;
+  display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(6,1fr);gap:9px;}
+
+.center-card-area{grid-column:2/9;grid-row:2/6;background:var(--center-bg);border-radius:22px;
+  box-shadow:inset 0 0 26px rgba(0,0,0,.08),0 8px 22px rgba(0,0,0,.2);padding:34px;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;
+  border:5px dashed #ffb088;}
+
+.tile{background:#fff;border-radius:13px;border:1px solid #cbd5e1;box-shadow:0 4px 7px rgba(0,0,0,.18);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;padding:5px;
+  position:relative;transition:transform .15s;cursor:pointer;overflow:hidden;}
+.tile:hover{transform:scale(1.06);z-index:5;}
+.tile .tile-num{position:absolute;top:4px;left:7px;font-size:.95rem;color:#94a3b8;font-family:var(--font-title);}
+.tile .tile-icon{font-size:1.9rem;line-height:1;margin:2px 0;}
+.tile .tile-name{font-family:var(--font-title);font-size:1.05rem;text-align:center;width:100%;line-height:1.15;color:#1e293b;}
+
+.tile.start{grid-column:1;grid-row:1;background:#10b981;color:#fff;}
+.tile.goal {grid-column:1;grid-row:2;background:#f59e0b;color:#fff;box-shadow:0 0 18px #fbbf24;}
+.tile.start .tile-name,.tile.goal .tile-name{color:#fff;font-size:1.3rem;}
+.tile.start .tile-icon,.tile.goal .tile-icon{font-size:2.1rem;}
+
+.tile.scientist{border-bottom:6px solid var(--c-scientist);}
+.tile.invention{border-bottom:6px solid var(--c-invention);}
+.tile.bonus{border-bottom:6px solid var(--c-bonus);}
+.tile.penalty{border-bottom:6px solid var(--c-penalty);}
+.tile.challenge{border-bottom:6px solid var(--c-challenge);}
+.tile.mystery{border-bottom:6px solid var(--c-mystery);}
+.tile.island{border-bottom:6px solid var(--c-island);}
+.tile.rest{border-bottom:6px solid var(--c-rest);}
+
+.piece-container{display:flex;gap:3px;position:absolute;bottom:4px;right:4px;flex-wrap:wrap;max-width:46px;justify-content:flex-end;}
+.piece{width:15px;height:15px;border-radius:50%;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.35);}
+.piece.p1{background:#ef4444;}.piece.p2{background:#3b82f6;}.piece.p3{background:#10b981;}.piece.p4{background:#eab308;}
+
+.active-tile{animation:pulse 1.4s infinite alternate;border:3px solid #ff477e !important;box-shadow:0 0 16px #ff477e !important;}
+@keyframes pulse{0%{transform:scale(1);}100%{transform:scale(1.07);}}
+
+.card-header{font-family:var(--font-title);font-size:1.3rem;color:#e8590c;letter-spacing:1px;}
+.card-title{font-family:var(--font-title);font-size:1.9rem;color:#0f172a;margin-top:6px;}
+.card-question{font-size:1.5rem;font-weight:bold;color:#334155;margin:18px 0;flex-grow:1;display:flex;align-items:center;justify-content:center;white-space:pre-line;line-height:1.5;}
+.timer-badge{font-family:var(--font-title);background:#8b5cf6;color:#fff;padding:5px 16px;border-radius:14px;font-size:1.25rem;display:none;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.45;}}
+
+.options-box{display:none;grid-template-columns:1fr 1fr;gap:14px;width:100%;}
+.opt-btn{font-family:var(--font-body);background:#fff;border:3px solid #cbd5e1;border-radius:14px;
+  padding:18px 14px;font-size:1.4rem;font-weight:bold;cursor:pointer;transition:all .15s;color:#1e293b;}
+.opt-btn:hover{border-color:#ff477e;background:#fff0f5;transform:translateY(-2px);}
+.opt-btn:disabled{cursor:default;opacity:.95;}
+.opt-btn.correct{background:#22c55e;border-color:#16a34a;color:#fff;}
+.opt-btn.wrong{background:#ef4444;border-color:#dc2626;color:#fff;}
+.opt-label{font-family:var(--font-title);color:#8b5cf6;margin-right:8px;}
+.opt-btn.correct .opt-label,.opt-btn.wrong .opt-label{color:#fff;}
+
+.control-panel{width:360px;background:rgba(255,255,255,.96);border-radius:22px;padding:22px;
+  box-shadow:0 12px 28px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:16px;}
+.status-box{background:#f8fafc;border-radius:14px;padding:14px;border:1px solid #e2e8f0;}
+.status-box h3{font-family:var(--font-title);font-size:1.25rem;margin-bottom:10px;color:#334155;border-bottom:1px solid #e2e8f0;padding-bottom:6px;}
+.player-row{display:flex;justify-content:space-between;align-items:center;padding:7px;font-size:1.1rem;}
+.player-row.active{background:#f0fdf4;outline:2px solid #22c55e;border-radius:8px;}
+.player-row .pname{font-family:var(--font-title);}
+
+.dice-section{text-align:center;padding:18px;background:#f1f5f9;border-radius:14px;border:1px solid #cbd5e1;}
+.dice-btn{font-family:var(--font-title);background:#ef4444;color:#fff;border:none;padding:15px 20px;font-size:1.45rem;border-radius:12px;cursor:pointer;width:100%;box-shadow:0 4px 7px rgba(0,0,0,.18);transition:background .2s;}
+.dice-btn:hover{background:#dc2626;}
+.dice-btn:disabled{background:#cbd5e1;cursor:not-allowed;}
+.dice-result{font-family:var(--font-title);font-size:3.4rem;margin-top:12px;color:#dc2626;height:58px;display:flex;align-items:center;justify-content:center;}
+
+.log-box{height:120px;overflow-y:auto;background:#1e293b;color:#f1f5f9;border-radius:14px;padding:12px;font-size:1rem;line-height:1.5;}
+.log-entry{margin-bottom:5px;border-bottom:1px solid #334155;padding-bottom:3px;}
+
+@media(max-width:1300px){
+  .game-container{flex-direction:column;align-items:center;}
+  .board-container{width:100%;max-width:1000px;}
+  .control-panel{width:100%;max-width:1000px;flex-direction:row;flex-wrap:wrap;}
+  .control-panel>div{flex:1;min-width:240px;}
+}
+@media print{
+  body{background:#fff;padding:0;}
+  .control-panel{display:none;}
+  .board-container{box-shadow:none;border:2px solid #000;background:#f8fafc;width:100%;height:auto;aspect-ratio:9/6;}
+  .tile{border:1px solid #000 !important;box-shadow:none;}
+  .center-card-area{border:2px dashed #000;background:#fff;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧬 생명기술 발달 보드게임</h1>
+  <p>둘레 트랙을 돌며 퀴즈를 풀고 먼저 GOAL에 도착하세요!</p>
+</header>
+
+<div class="game-container">
+  <div class="board-container" id="board">
+    <div class="center-card-area" id="center-card">
+      <div>
+        <div class="timer-badge" id="timer">⏳ 10초</div>
+        <div class="card-header" id="card-type">SYSTEM</div>
+        <div class="card-title" id="card-title">플레이 대기 중</div>
+      </div>
+      <div class="card-question" id="card-msg">우측 버튼을 눌러 주사위를 굴려주세요!</div>
+      <div class="options-box" id="options-box"></div>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <div class="status-box">
+      <h3>👥 모둠별 상태</h3>
+      <div id="player-status-list"></div>
+    </div>
+    <div class="dice-section">
+      <button class="dice-btn" id="dice-btn" onclick="rollDice()">🎲 주사위 굴리기</button>
+      <div class="dice-result" id="dice-result">-</div>
+    </div>
+    <div class="status-box">
+      <h3>📜 진행 기록</h3>
+      <div class="log-box" id="log-box"><div class="log-entry">게임 준비 완료. 1조부터 시작합니다!</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tilesData = [
+            {
+                        "id": 0,
+                        "name": "START",
+                        "type": "start",
+                        "icon": "🚀",
+                        "r": 1,
+                        "c": 1
+            },
+            {
+                        "id": 1,
+                        "name": "17세기 과학",
+                        "type": "scientist",
+                        "icon": "🔬",
+                        "r": 1,
+                        "c": 2
+            },
+            {
+                        "id": 2,
+                        "name": "관찰 도구",
+                        "type": "invention",
+                        "icon": "🔍",
+                        "r": 1,
+                        "c": 3
+            },
+            {
+                        "id": 3,
+                        "name": "보너스",
+                        "type": "bonus",
+                        "icon": "🎁",
+                        "r": 1,
+                        "c": 4
+            },
+            {
+                        "id": 4,
+                        "name": "18세기 의학",
+                        "type": "scientist",
+                        "icon": "👨‍⚕️",
+                        "r": 1,
+                        "c": 5
+            },
+            {
+                        "id": 5,
+                        "name": "질병 예방",
+                        "type": "invention",
+                        "icon": "💉",
+                        "r": 1,
+                        "c": 6
+            },
+            {
+                        "id": 6,
+                        "name": "챌린지",
+                        "type": "challenge",
+                        "icon": "⚡",
+                        "r": 1,
+                        "c": 7
+            },
+            {
+                        "id": 7,
+                        "name": "19세기 유전",
+                        "type": "scientist",
+                        "icon": "🌱",
+                        "r": 1,
+                        "c": 8
+            },
+            {
+                        "id": 8,
+                        "name": "유전 실험",
+                        "type": "invention",
+                        "icon": "🫛",
+                        "r": 1,
+                        "c": 9
+            },
+            {
+                        "id": 9,
+                        "name": "페널티",
+                        "type": "penalty",
+                        "icon": "⚠️",
+                        "r": 2,
+                        "c": 9
+            },
+            {
+                        "id": 10,
+                        "name": "휴식",
+                        "type": "rest",
+                        "icon": "☕",
+                        "r": 3,
+                        "c": 9
+            },
+            {
+                        "id": 11,
+                        "name": "20세기 의학",
+                        "type": "scientist",
+                        "icon": "🧫",
+                        "r": 4,
+                        "c": 9
+            },
+            {
+                        "id": 12,
+                        "name": "감염 치료",
+                        "type": "invention",
+                        "icon": "💊",
+                        "r": 5,
+                        "c": 9
+            },
+            {
+                        "id": 13,
+                        "name": "미스터리",
+                        "type": "mystery",
+                        "icon": "❓",
+                        "r": 6,
+                        "c": 9
+            },
+            {
+                        "id": 14,
+                        "name": "유전 물질",
+                        "type": "scientist",
+                        "icon": "🧬",
+                        "r": 6,
+                        "c": 8
+            },
+            {
+                        "id": 15,
+                        "name": "분자 구조",
+                        "type": "invention",
+                        "icon": "🌀",
+                        "r": 6,
+                        "c": 7
+            },
+            {
+                        "id": 16,
+                        "name": "공동 연구",
+                        "type": "scientist",
+                        "icon": "👨‍🔬",
+                        "r": 6,
+                        "c": 6
+            },
+            {
+                        "id": 17,
+                        "name": "보너스",
+                        "type": "bonus",
+                        "icon": "🎁",
+                        "r": 6,
+                        "c": 5
+            },
+            {
+                        "id": 18,
+                        "name": "챌린지",
+                        "type": "challenge",
+                        "icon": "⚡",
+                        "r": 6,
+                        "c": 4
+            },
+            {
+                        "id": 19,
+                        "name": "무인도",
+                        "type": "island",
+                        "icon": "🏝️",
+                        "r": 6,
+                        "c": 3
+            },
+            {
+                        "id": 20,
+                        "name": "복제 기술",
+                        "type": "scientist",
+                        "icon": "🐑",
+                        "r": 6,
+                        "c": 2
+            },
+            {
+                        "id": 21,
+                        "name": "생명 윤리",
+                        "type": "invention",
+                        "icon": "⚖️",
+                        "r": 6,
+                        "c": 1
+            },
+            {
+                        "id": 22,
+                        "name": "페널티",
+                        "type": "penalty",
+                        "icon": "⚠️",
+                        "r": 5,
+                        "c": 1
+            },
+            {
+                        "id": 23,
+                        "name": "21세기 과학",
+                        "type": "invention",
+                        "icon": "💻",
+                        "r": 4,
+                        "c": 1
+            },
+            {
+                        "id": 24,
+                        "name": "미래 기술",
+                        "type": "mystery",
+                        "icon": "✂️",
+                        "r": 3,
+                        "c": 1
+            },
+            {
+                        "id": 25,
+                        "name": "GOAL",
+                        "type": "goal",
+                        "icon": "🏆",
+                        "r": 2,
+                        "c": 1
+            }
+];
+const questionPool = {
+  "1": [
+    {
+      "q": "코르크를 현미경으로 관찰해 '세포'를 처음 발견한 사람은?",
+      "options": [
+        "로버트 훅",
+        "갈릴레이",
+        "뉴턴",
+        "다윈"
+      ]
+    },
+    {
+      "q": "로버트 훅이 코르크 조각에서 처음 발견한 작은 방 모양 구조의 이름은?",
+      "options": [
+        "세포",
+        "원자",
+        "분자",
+        "세균"
+      ]
+    },
+    {
+      "q": "로버트 훅이 세포를 발견할 때 사용한 도구는?",
+      "options": [
+        "현미경",
+        "망원경",
+        "온도계",
+        "저울"
+      ]
+    }
+  ],
+  "2": [
+    {
+      "q": "눈으로 보기 힘든 작은 세포를 관찰하게 해준 도구는?",
+      "options": [
+        "현미경",
+        "망원경",
+        "돋보기",
+        "청진기"
+      ]
+    },
+    {
+      "q": "현미경의 가장 중요한 기능은 무엇인가?",
+      "options": [
+        "작은 것을 크게 보이게 함",
+        "멀리 있는 것을 봄",
+        "소리를 들음",
+        "무게를 잼"
+      ]
+    },
+    {
+      "q": "17세기 현미경 발달로 인류가 새롭게 관찰할 수 있게 된 것은?",
+      "options": [
+        "세포",
+        "행성",
+        "화산",
+        "해류"
+      ]
+    }
+  ],
+  "4": [
+    {
+      "q": "천연두를 예방하는 인류 최초의 백신을 만든 사람은?",
+      "options": [
+        "에드워드 제너",
+        "파스퇴르",
+        "플레밍",
+        "멘델"
+      ]
+    },
+    {
+      "q": "에드워드 제너가 백신으로 예방하려 한 무서운 전염병은?",
+      "options": [
+        "천연두",
+        "감기",
+        "충치",
+        "골절"
+      ]
+    },
+    {
+      "q": "제너가 백신 개발의 힌트를 얻은 동물의 질병은?",
+      "options": [
+        "우두(소의 병)",
+        "조류 독감",
+        "광견병",
+        "돼지 열병"
+      ]
+    }
+  ],
+  "5": [
+    {
+      "q": "백신이 우리 몸에서 하는 역할로 옳은 것은?",
+      "options": [
+        "질병 예방",
+        "영양 공급",
+        "상처 봉합",
+        "체온 상승"
+      ]
+    },
+    {
+      "q": "백신은 우리 몸의 무엇을 키워 병을 막는가?",
+      "options": [
+        "면역력",
+        "근육",
+        "시력",
+        "청력"
+      ]
+    },
+    {
+      "q": "백신(vaccine)이라는 말의 어원이 된 동물은?",
+      "options": [
+        "소",
+        "말",
+        "개",
+        "닭"
+      ]
+    }
+  ],
+  "6": [
+    {
+      "q": "[챌린지] 고대부터 술·치즈·빵을 만드는 데 쓰인 생명기술은?",
+      "options": [
+        "발효",
+        "냉동",
+        "건조",
+        "훈제"
+      ]
+    },
+    {
+      "q": "[챌린지] 빵을 부풀게 하고 술을 만드는 데 쓰이는 미생물은?",
+      "options": [
+        "효모",
+        "바이러스",
+        "곰팡이만",
+        "해조류"
+      ]
+    },
+    {
+      "q": "[챌린지] 김치·된장처럼 미생물의 작용으로 만들어진 식품을 무엇이라 하나?",
+      "options": [
+        "발효 식품",
+        "냉동 식품",
+        "인스턴트 식품",
+        "건조 식품"
+      ]
+    }
+  ],
+  "7": [
+    {
+      "q": "완두콩 실험으로 유전 법칙을 발견한 사람은?",
+      "options": [
+        "멘델",
+        "훅",
+        "왓슨",
+        "다윈"
+      ]
+    },
+    {
+      "q": "멘델이 발견한, 자손에게 잘 나타나는 형질을 무엇이라 하나?",
+      "options": [
+        "우성",
+        "열성",
+        "중성",
+        "변성"
+      ]
+    },
+    {
+      "q": "멘델은 어떤 장소에서 완두콩을 재배하며 실험했나?",
+      "options": [
+        "수도원 정원",
+        "바닷가",
+        "사막",
+        "동굴"
+      ]
+    }
+  ],
+  "8": [
+    {
+      "q": "멘델이 유전을 연구하기 위해 사용한 식물은?",
+      "options": [
+        "완두콩",
+        "벼",
+        "해바라기",
+        "장미"
+      ]
+    },
+    {
+      "q": "멘델이 완두콩에서 관찰한 대표적 특징이 아닌 것은?",
+      "options": [
+        "냄새",
+        "씨앗 색",
+        "씨앗 모양",
+        "키"
+      ]
+    },
+    {
+      "q": "멘델의 실험은 무엇이 부모에서 자손으로 전달됨을 밝혔나?",
+      "options": [
+        "형질(유전)",
+        "질병",
+        "온도",
+        "수분"
+      ]
+    }
+  ],
+  "11": [
+    {
+      "q": "푸른곰팡이에서 최초의 항생물질을 발견한 사람은?",
+      "options": [
+        "플레밍",
+        "제너",
+        "파스퇴르",
+        "크릭"
+      ]
+    },
+    {
+      "q": "플레밍이 발견한 인류 최초의 항생물질의 이름은?",
+      "options": [
+        "페니실린",
+        "아스피린",
+        "비타민",
+        "인슐린"
+      ]
+    },
+    {
+      "q": "플레밍의 페니실린 발견에서 큰 역할을 한 것은?",
+      "options": [
+        "우연한 곰팡이 오염",
+        "정밀한 계산",
+        "비싼 장비",
+        "외국 유학"
+      ]
+    }
+  ],
+  "12": [
+    {
+      "q": "페니실린처럼 해로운 세균을 없애는 약을 무엇이라 하나요?",
+      "options": [
+        "항생제",
+        "진통제",
+        "소화제",
+        "해열제"
+      ]
+    },
+    {
+      "q": "항생제가 주로 물리치는 대상은?",
+      "options": [
+        "세균",
+        "뼈",
+        "혈액",
+        "근육"
+      ]
+    },
+    {
+      "q": "항생제의 등장으로 크게 줄어든 것은?",
+      "options": [
+        "감염병 사망",
+        "교통사고",
+        "지진",
+        "홍수"
+      ]
+    }
+  ],
+  "13": [
+    {
+      "q": "[미스터리] 유전 정보를 담아 다음 세대로 전달하는 물질은?",
+      "options": [
+        "DNA",
+        "RNA",
+        "ATP",
+        "단백질"
+      ]
+    },
+    {
+      "q": "[미스터리] DNA는 세포의 어느 부분에 주로 들어 있는가?",
+      "options": [
+        "세포핵",
+        "세포막",
+        "세포벽",
+        "엽록체"
+      ]
+    },
+    {
+      "q": "[미스터리] DNA가 담고 있는 것은 무엇인가?",
+      "options": [
+        "유전 정보",
+        "에너지",
+        "수분",
+        "산소"
+      ]
+    }
+  ],
+  "14": [
+    {
+      "q": "DNA의 입체 구조를 무엇이라 부르나요?",
+      "options": [
+        "이중 나선",
+        "삼각형",
+        "원형 고리",
+        "사각 격자"
+      ]
+    },
+    {
+      "q": "DNA의 이중 나선 구조를 밝혀낸 두 과학자는?",
+      "options": [
+        "왓슨과 크릭",
+        "멘델과 훅",
+        "제너와 파스퇴르",
+        "뉴턴과 갈릴레이"
+      ]
+    },
+    {
+      "q": "DNA 이중 나선 구조가 밝혀지며 함께 이해된 것은?",
+      "options": [
+        "유전 정보의 복제",
+        "빛의 속도",
+        "지구의 자전",
+        "화산 폭발"
+      ]
+    }
+  ],
+  "15": [
+    {
+      "q": "DNA 사슬 속에 기록되어 전달되는 정보를 무엇이라 하나요?",
+      "options": [
+        "유전 정보",
+        "위치 정보",
+        "온도 정보",
+        "에너지 정보"
+      ]
+    },
+    {
+      "q": "유전 정보는 누구에게서 누구에게로 전달되는가?",
+      "options": [
+        "부모에서 자손",
+        "친구끼리",
+        "스승에서 제자",
+        "이웃끼리"
+      ]
+    },
+    {
+      "q": "DNA의 정식 명칭(약자가 가리키는 것)에 가까운 것은?",
+      "options": [
+        "디옥시리보핵산",
+        "단백질 합성소",
+        "세포 분열체",
+        "에너지 저장소"
+      ]
+    }
+  ],
+  "16": [
+    {
+      "q": "왓슨·크릭의 DNA 구조 규명에 결정적 X선 사진을 제공한 과학자는?",
+      "options": [
+        "로잘린드 프랭클린",
+        "멘델",
+        "파스퇴르",
+        "훅"
+      ]
+    },
+    {
+      "q": "DNA 구조 발견은 무엇의 중요성을 보여주는 사례인가?",
+      "options": [
+        "과학자들의 협력",
+        "혼자만의 연구",
+        "우연한 행운",
+        "값비싼 장비"
+      ]
+    },
+    {
+      "q": "DNA 구조를 밝히는 데 쓰인 촬영 기법은?",
+      "options": [
+        "X선 회절",
+        "적외선 사진",
+        "현미경 사진",
+        "위성 사진"
+      ]
+    }
+  ],
+  "18": [
+    {
+      "q": "[챌린지] 원본과 유전적으로 똑같은 개체를 만드는 기술은?",
+      "options": [
+        "복제",
+        "접목",
+        "교배",
+        "발효"
+      ]
+    },
+    {
+      "q": "[챌린지] 복제 양 돌리가 태어난 것은 무엇이 가능함을 보여주었나?",
+      "options": [
+        "체세포로 복제",
+        "식물만 복제",
+        "복제 불가능",
+        "자연 발생"
+      ]
+    },
+    {
+      "q": "[챌린지] 복제 기술이 응용될 수 있는 분야가 아닌 것은?",
+      "options": [
+        "일기 예보",
+        "의료",
+        "농업",
+        "멸종 위기종 보존"
+      ]
+    }
+  ],
+  "19": [
+    {
+      "q": "[무인도] '세포는 모든 생물의 기본 단위이다.' 맞으면 O, 틀리면 X",
+      "options": [
+        "O (맞다)",
+        "X (틀리다)"
+      ]
+    },
+    {
+      "q": "[무인도] 'DNA에는 유전 정보가 담겨 있다.' 맞으면 O, 틀리면 X",
+      "options": [
+        "O (맞다)",
+        "X (틀리다)"
+      ]
+    },
+    {
+      "q": "[무인도] '백신은 병을 치료하기 위해 만들어졌다.' 맞으면 O, 틀리면 X (예방 목적)",
+      "options": [
+        "X (틀리다)",
+        "O (맞다)"
+      ]
+    }
+  ],
+  "20": [
+    {
+      "q": "세계 최초로 태어난 복제 포유류 양의 이름은?",
+      "options": [
+        "돌리",
+        "베티",
+        "루나",
+        "몰리"
+      ]
+    },
+    {
+      "q": "복제 양 돌리는 어떤 세포를 이용해 태어났나?",
+      "options": [
+        "체세포",
+        "줄기세포만",
+        "식물세포",
+        "적혈구"
+      ]
+    },
+    {
+      "q": "복제 양 돌리의 탄생은 어느 나라 연구진의 성과인가?",
+      "options": [
+        "영국(스코틀랜드)",
+        "미국",
+        "일본",
+        "독일"
+      ]
+    }
+  ],
+  "21": [
+    {
+      "q": "복제·유전자 조작 기술과 함께 중요해진 사회적 논의 주제는?",
+      "options": [
+        "생명 윤리",
+        "교통 윤리",
+        "환경 미화",
+        "경제 성장"
+      ]
+    },
+    {
+      "q": "생명 윤리가 다루는 질문에 가까운 것은?",
+      "options": [
+        "생명 기술을 어디까지 허용할까",
+        "주식 가격은 얼마일까",
+        "날씨는 어떨까",
+        "교통량은 얼마일까"
+      ]
+    },
+    {
+      "q": "인간 복제가 현재 대부분의 나라에서 금지된 이유에 가까운 것은?",
+      "options": [
+        "윤리적·사회적 문제",
+        "기술이 전혀 없어서",
+        "비용이 0원이라서",
+        "법이 없어서"
+      ]
+    }
+  ],
+  "23": [
+    {
+      "q": "인간의 모든 DNA 염기서열을 해독한 국제 프로젝트는?",
+      "options": [
+        "인간 게놈 프로젝트",
+        "아폴로 계획",
+        "맨해튼 계획",
+        "우주 정거장"
+      ]
+    },
+    {
+      "q": "인간 게놈 프로젝트가 분석한 인간 유전 정보의 양에 가까운 것은?",
+      "options": [
+        "약 30억 염기쌍",
+        "약 100개",
+        "약 1만 개",
+        "약 50만 개"
+      ]
+    },
+    {
+      "q": "인간 게놈 프로젝트의 결과가 도움을 주는 분야는?",
+      "options": [
+        "유전 질환 치료",
+        "날씨 예측",
+        "건축 설계",
+        "교통 관리"
+      ]
+    }
+  ],
+  "24": [
+    {
+      "q": "[미래기술] 원하는 유전자를 잘라 교정하는 3세대 편집 기술은?",
+      "options": [
+        "유전자 가위(크리스퍼)",
+        "엑스레이",
+        "초음파",
+        "백신"
+      ]
+    },
+    {
+      "q": "[미래기술] 유전자 가위 기술로 기대되는 일에 가까운 것은?",
+      "options": [
+        "유전 질환 치료",
+        "날씨 조절",
+        "지진 예방",
+        "교통 정리"
+      ]
+    },
+    {
+      "q": "[미래기술] 유전자 가위는 DNA의 무엇을 정밀하게 다루는 기술인가?",
+      "options": [
+        "특정 유전자 부위",
+        "온도",
+        "속도",
+        "무게"
+      ]
+    }
+  ]
+};
+
+const players = [
+  {id:1,name:"1조 (빨강)",pos:0,score:0,color:"#ef4444",skip:false,class:"p1"},
+  {id:2,name:"2조 (파랑)",pos:0,score:0,color:"#3b82f6",skip:false,class:"p2"},
+  {id:3,name:"3조 (초록)",pos:0,score:0,color:"#10b981",skip:false,class:"p3"},
+  {id:4,name:"4조 (노랑)",pos:0,score:0,color:"#eab308",skip:false,class:"p4"}
+];
+const GOAL_POS = 25;
+let turn=0, activeQ=null, correctIdx=null, timerInterval=null, timeLeft=10, busy=false;
+let lastQuestionIdx={};  // 칸별 직전 출제 문제 인덱스 (연속 중복 방지)
+
+// 정답(원본 0번)을 포함해 보기 순서를 섞고, 정답의 새 위치를 함께 반환
+function shuffleOptions(options){
+  const arr=options.map((text,i)=>({text,wasCorrect:i===0}));
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return {
+    options:arr.map(o=>o.text),
+    correctIndex:arr.findIndex(o=>o.wasCorrect)
+  };
+}
+
+function initBoard(){
+  const boardEl=document.getElementById("board");
+  tilesData.forEach(tile=>{
+    const el=document.createElement("div");
+    el.id="tile-"+tile.id;
+    el.className="tile "+tile.type;
+    el.style.gridColumn=tile.c;
+    el.style.gridRow=tile.r;
+    if(tile.id===0||tile.id===GOAL_POS){
+      el.innerHTML=`<span class="tile-icon">${tile.icon}</span><span class="tile-name">${tile.name}</span><div class="piece-container" id="piece-box-${tile.id}"></div>`;
+    }else{
+      el.innerHTML=`<span class="tile-num">${tile.id}</span><span class="tile-icon">${tile.icon}</span><span class="tile-name">${tile.name}</span><div class="piece-container" id="piece-box-${tile.id}"></div>`;
+    }
+    boardEl.appendChild(el);
+  });
+  updateStatus(); renderPieces();
+}
+
+function updateStatus(){
+  const list=document.getElementById("player-status-list"); list.innerHTML="";
+  players.forEach((p,idx)=>{
+    const row=document.createElement("div");
+    row.className="player-row "+(idx===turn?"active":"");
+    const where=p.pos===0?"출발":(p.pos===GOAL_POS?"👑 GOAL":p.pos+"번 칸");
+    row.innerHTML=`<span class="pname" style="color:${p.color}">● ${p.name}</span><span>${where} (${p.score}점)</span>`;
+    list.appendChild(row);
+  });
+}
+
+function renderPieces(){
+  tilesData.forEach(t=>{
+    const box=document.getElementById("piece-box-"+t.id);
+    if(box) box.innerHTML="";
+    const tl=document.getElementById("tile-"+t.id);
+    if(tl) tl.classList.remove("active-tile");
+  });
+  players.forEach(p=>{
+    const box=document.getElementById("piece-box-"+p.pos);
+    if(box){const d=document.createElement("span");d.className="piece "+p.class;box.appendChild(d);}
+  });
+  const cur=players[turn].pos;
+  const ct=document.getElementById("tile-"+cur);
+  if(ct) ct.classList.add("active-tile");
+}
+
+function log(msg){
+  const box=document.getElementById("log-box");
+  const e=document.createElement("div");e.className="log-entry";e.innerText=msg;
+  box.appendChild(e);box.scrollTop=box.scrollHeight;
+}
+
+function rollDice(){
+  if(busy) return;
+  document.getElementById("dice-btn").disabled=true;
+  const p=players[turn];
+  if(p.skip){log(`☕ ${p.name}는 이번 턴 휴식합니다.`);p.skip=false;nextTurn();return;}
+  busy=true;
+  let count=0; const el=document.getElementById("dice-result");
+  const iv=setInterval(()=>{
+    el.innerText=Math.floor(Math.random()*6)+1; count++;
+    if(count>8){
+      clearInterval(iv);
+      const n=Math.floor(Math.random()*6)+1;
+      el.innerText=n; log(`🎲 ${p.name} 주사위: [ ${n} ]`);
+      busy=false; movePlayer(n);
+    }
+  },80);
+}
+
+function movePlayer(steps){
+  const p=players[turn];
+  let target=p.pos+steps;
+  if(target>=GOAL_POS){p.pos=GOAL_POS;renderPieces();updateStatus();endGame(p);return;}
+  p.pos=target; renderPieces(); updateStatus();
+  processTile(tilesData[target]);
+}
+
+// 정답/오답 결과로 한 칸만 조용히 이동 (도착 칸에서 새 문제 풀지 않고 턴 종료)
+function shiftOnly(steps){
+  const p=players[turn];
+  let target=p.pos+steps;
+  if(target>=GOAL_POS){p.pos=GOAL_POS;renderPieces();updateStatus();endGame(p);return;}
+  if(target<0) target=0;
+  p.pos=target; renderPieces(); updateStatus();
+  setTimeout(nextTurn,1200);
+}
+
+function processTile(tile){
+  const cardType=document.getElementById("card-type");
+  const cardTitle=document.getElementById("card-title");
+  const cardMsg=document.getElementById("card-msg");
+  const optBox=document.getElementById("options-box");
+  const timerEl=document.getElementById("timer");
+  optBox.style.display="none"; optBox.innerHTML="";
+  timerEl.style.display="none"; clearInterval(timerInterval);
+
+  const typeLabel={scientist:"과학자",invention:"발명품",challenge:"챌린지",mystery:"미스터리",island:"무인도",bonus:"보너스",penalty:"페널티",rest:"휴식"};
+  cardType.innerText=typeLabel[tile.type]||tile.type;
+  cardTitle.innerText=`${tile.id}번 · ${tile.name}`;
+
+  if(["scientist","invention","challenge","mystery","island"].includes(tile.type)){
+    const qList=questionPool[tile.id];
+    if(qList && qList.length){
+      // 풀에서 랜덤 문제 선택 (직전과 다른 문제 우선)
+      let qIdx=Math.floor(Math.random()*qList.length);
+      if(qList.length>1 && lastQuestionIdx[tile.id]===qIdx){
+        qIdx=(qIdx+1)%qList.length;
+      }
+      lastQuestionIdx[tile.id]=qIdx;
+      const picked=qList[qIdx];
+      // 정답은 원본 0번. 보기 셔플 후 정답의 새 위치를 correctIdx로
+      const shuffled=shuffleOptions(picked.options);
+      activeQ=tile; correctIdx=shuffled.correctIndex;
+      cardMsg.innerText=picked.q;
+      optBox.style.display="grid";
+      const labels=["A","B","C","D"];
+      shuffled.options.forEach((opt,i)=>{
+        const b=document.createElement("button");
+        b.className="opt-btn";
+        b.innerHTML=`<span class="opt-label">${labels[i]}</span>${opt}`;
+        b.onclick=()=>chooseAnswer(i,b);
+        optBox.appendChild(b);
+      });
+      if(tile.type==="challenge"){
+        timerEl.style.display="inline-block"; timeLeft=10; timerEl.innerText=`⏳ ${timeLeft}초`;
+        timerInterval=setInterval(()=>{
+          timeLeft--; timerEl.innerText=`⏳ ${timeLeft}초`;
+          if(timeLeft<=0){clearInterval(timerInterval);log("⏰ 시간 초과!");revealAndFail();}
+        },1000);
+      }
+    }else{
+      cardMsg.innerText="빈 칸입니다. 다음 차례로 넘어갑니다.";
+      setTimeout(nextTurn,1400);
+    }
+  }else if(tile.type==="bonus"){
+    cardMsg.innerText="🎁 보너스! 앞으로 1칸 전진합니다.";
+    setTimeout(()=>shiftOnly(1),1400);
+  }else if(tile.type==="penalty"){
+    cardMsg.innerText="⚠️ 페널티! 뒤로 1칸 후퇴합니다.";
+    setTimeout(()=>shiftOnly(-1),1400);
+  }else if(tile.type==="rest"){
+    cardMsg.innerText="☕ 휴식 칸. 다음 턴을 쉽니다.";
+    players[turn].skip=true; setTimeout(nextTurn,1600);
+  }
+}
+
+function chooseAnswer(idx,btn){
+  clearInterval(timerInterval);
+  const optBox=document.getElementById("options-box");
+  [...optBox.children].forEach(b=>b.disabled=true);
+  const p=players[turn]; const tile=activeQ;
+  if(idx===correctIdx){
+    btn.classList.add("correct");
+    p.score+=10; updateStatus();
+    log(`⭕ 정답! ${p.name} (+10점) → 앞으로 1칸`);
+    setTimeout(()=>shiftOnly(1),1300);
+  }else{
+    btn.classList.add("wrong");
+    optBox.children[correctIdx].classList.add("correct");
+    log(`❌ 오답! ${p.name} → 뒤로 1칸`);
+    setTimeout(()=>shiftOnly(-1),1300);
+  }
+}
+
+function revealAndFail(){
+  const optBox=document.getElementById("options-box");
+  [...optBox.children].forEach(b=>b.disabled=true);
+  if(optBox.children[correctIdx]) optBox.children[correctIdx].classList.add("correct");
+  log(`⏰ 시간 초과! ${players[turn].name} → 뒤로 1칸`);
+  setTimeout(()=>shiftOnly(-1),1300);
+}
+
+function nextTurn(){
+  turn=(turn+1)%players.length;
+  updateStatus(); renderPieces();
+  document.getElementById("card-type").innerText="SYSTEM";
+  document.getElementById("card-title").innerText=`${players[turn].name} 차례`;
+  document.getElementById("card-msg").innerText="🎲 주사위를 굴려 이동하세요.";
+  document.getElementById("options-box").style.display="none";
+  document.getElementById("timer").style.display="none";
+  document.getElementById("dice-btn").disabled=false;
+}
+
+function endGame(winner){
+  document.getElementById("card-type").innerText="🏆 GAME OVER";
+  document.getElementById("card-title").innerText="우승!";
+  document.getElementById("card-msg").innerHTML=`🎉 <strong>${winner.name}</strong>가 먼저 GOAL에 도착했습니다!`;
+  document.getElementById("options-box").style.display="none";
+  document.getElementById("dice-btn").disabled=true;
+  log(`🏁 게임 종료: ${winner.name} 우승!`);
+}
+
+window.onload=initBoard;
+</script>
+</body>
+</html>
